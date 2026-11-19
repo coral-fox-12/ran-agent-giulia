@@ -111,3 +111,70 @@ def score_task(task_type, expected, got):
         return {"metric": metric,
                 "score": polygon_iou(expected.get("polygon", []), got.get("polygon", []))}
     raise ValueError(f"unknown metric: {metric}")
+
+
+def check_answer_quality(task_type, answer, kpis=None):
+    """Internal-consistency check for a baseline/agent answer, no ground truth
+    needed. Verifies the schema (tasks.validate_answer) plus per-type sanity:
+    percentages in range, claims consistent with the KPIs they cite.
+    Returns (ok: bool, issues: list[str])."""
+    from .tasks import validate_answer, TASK_TYPES
+    issues = []
+    try:
+        validate_answer(task_type, answer)
+    except ValueError as e:
+        return False, [str(e)]
+
+    def _pct(name, v):
+        if not isinstance(v, (int, float)) or not 0.0 <= v <= 100.0:
+            issues.append(f"{name}={v!r} not a percentage in [0, 100]")
+
+    if task_type == "fault_diagnosis":
+        if answer["root_cause"] not in {
+                "hardware", "interference", "misconfiguration",
+                "propagation", "overload"}:
+            issues.append(f"unknown root_cause: {answer['root_cause']!r}")
+        if not answer["evidence"]:
+            issues.append("evidence is empty")
+    elif task_type == "outage_impact":
+        _pct("coverage_loss_pct", answer["coverage_loss_pct"])
+        _pct("throughput_loss_pct", answer["throughput_loss_pct"])
+        if not answer["affected_cells"]:
+            issues.append("affected_cells is empty")
+    elif task_type == "coverage":
+        _pct("coverage_pct", answer["coverage_pct"])
+        poly = answer["coverage_polygon"]
+        if not isinstance(poly, dict) or poly.get("type") != "Polygon":
+            issues.append("coverage_polygon is not a GeoJSON Polygon")
+    elif task_type == "radio_config":
+        if not isinstance(answer["meets_conditions"], bool):
+            issues.append("meets_conditions is not a bool")
+        if answer["meets_conditions"] and not answer["kpis"]:
+            issues.append("claims meets_conditions but reports no KPIs")
+        if kpis is not None and answer["meets_conditions"]:
+            # Cross-check the claim against the KPIs actually measured.
+            bad = [c for c, kv in kpis.get("cells", {}).items()
+                   if kv["rsrp_dbm"] < -100.0 or kv["sinr_db"] < 0.0]
+            if bad:
+                issues.append(f"claims conditions met but {bad} still violate "
+                              "RSRP >= -100 dBm / SINR >= 0 dB")
+    elif task_type == "site_placement":
+        sites = answer["sites"]
+        if not isinstance(sites, list) or not sites:
+            issues.append("sites is empty")
+        else:
+            for s in sites:
+                if not isinstance(s, dict) or "lat" not in s or "lon" not in s:
+                    issues.append(f"site {s!r} lacks lat/lon")
+        poly = answer["coverage_polygon"]
+        if not isinstance(poly, dict) or poly.get("type") != "Polygon":
+            issues.append("coverage_polygon is not a GeoJSON Polygon")
+    elif task_type == "energy":
+        _pct("energy_saved_pct", answer["energy_saved_pct"])
+        if answer["energy_saved_pct"] > 0 and not answer["config"]:
+            issues.append("claims energy saved but proposes no config change")
+        if answer["energy_saved_pct"] == 0 and answer["config"]:
+            issues.append("proposes a config change but claims 0% saved")
+    else:
+        issues.append(f"unknown task type: {task_type!r}")
+    return (not issues), issues

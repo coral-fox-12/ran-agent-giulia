@@ -26,6 +26,28 @@ Per-task runners live in `ran_agent/tasks.py`; prompt templates in `prompts/`;
 the simulator is wrapped in `ran_agent/giulia_client.py` (real subprocess backend
 + mock backend for offline development).
 
+## Baseline agent (no LLM needed)
+
+`ran_agent/baseline.py` is a deterministic reference implementation of the same
+hypothesis → experiment → answer loop: rule-based hypotheses from the baseline
+simulation, cheapest discriminating experiment first, typed answer, never over
+budget (it degrades to fewer experiments, or an inspection-only answer at a
+0-simulation budget, instead of raising). It runs on the mock backend only and
+is the score the real (Qwen) agent has to beat. The mock simulator is
+config-responsive in a documented directional model (power up → RSRP/SINR up,
+neighbours' SINR down; switch-off → zero throughput; new cell → +3 pts
+coverage), with per-cell seeded draws so experiments measure only the config
+change. All thresholds are heuristics — retune against real Giulia after 27/11.
+
+```bash
+./venv/bin/python examples/baseline_run.py   # all 6 task types on the mock
+./venv/bin/python -m unittest discover -s tests -v
+```
+
+Domain background for the agent lives in [`docs/ran-primer.md`](docs/ran-primer.md)
+(**DRAFT** — verify against the 27/11 task docs): RSRP/RSRQ/SINR, handover,
+PCI confusion, tilt/azimuth, power, load balancing, carrier shutdown.
+
 ## Quickstart
 
 ```bash
@@ -38,8 +60,9 @@ python3 -m venv venv && ./venv/bin/pip install -r requirements.txt
 # 3. Mock end-to-end run (no GPU, no model, no shadowing maps needed)
 ./venv/bin/python examples/mock_run.py
 
-# 4. Unit tests
+# 4. Unit tests + baseline agent (all 6 task types, no LLM)
 ./venv/bin/python -m unittest discover -s tests -v
+./venv/bin/python examples/baseline_run.py
 ```
 
 ## Real runs (after 27/11)
@@ -63,12 +86,13 @@ ran_agent/
   tools.py         # tool schemas the agent may call
   tasks.py         # per-task runners, answer schemas, budgets
   agent.py         # ReAct loop (hypothesis -> experiment -> answer)
-  eval.py          # local scoring: WER / multi-col acc / polygon IoU
+  baseline.py      # deterministic baseline agent (no LLM, mock backend)
+  eval.py          # local scoring: WER / multi-col acc / polygon IoU + answer quality
   submit.py        # submission builder (FORMAT TBD until 27/11)
 prompts/           # one prompt template per task type
-examples/mock_run.py
-tests/test_smoke.py
-docs/RESEARCH.md
+examples/mock_run.py examples/baseline_run.py
+tests/test_smoke.py tests/test_baseline.py
+docs/RESEARCH.md docs/ran-primer.md   # primer is DRAFT until 27/11
 ```
 
 ## Rules compliance

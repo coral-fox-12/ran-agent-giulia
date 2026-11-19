@@ -3,4 +3,6 @@
 Base model is FIXED by the challenge rules: Qwen3.6-35B-A3B.
 Simulator backends: "mock" (deterministic, offline dev) or "giulia" (real subprocess).
 """
-__version__ = "0.1.0-scaffold"
+from .baseline import BaselineAgent, run_baseline  # noqa: F401
+
+__version__ = "0.2.0-baseline"

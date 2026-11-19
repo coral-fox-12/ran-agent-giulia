@@ -218,15 +218,15 @@ permitted changes, constraints and required answer format" (Data Description pag
       per-task runners, ReAct loop, local eval harness, submission placeholder).
 - [x] Prompt templates per task type (6 files in `prompts/`).
 - [x] Mock end-to-end run: synthetic network + mock simulator + mock LLM → typed answers + local scores.
-- [ ] Baseline agent logic on the mock backend (hypothesis → experiment → answer loop, budget-capped).
+- [x] Baseline agent logic on the mock backend (hypothesis → experiment → answer loop, budget-capped). — DONE 20/11 (ran_agent/baseline.py + tests/test_baseline.py, 30/30 tests green, examples/baseline_run.py all 6 types quality OK).
 - [ ] Download Qwen3.6-35B-A3B GGUF Q4_K_M (~21 GB) to a persistent cache **only if a free host with
       disk + bandwidth is available** — NOT on this VM (quota). Kaggle dataset / Colab Drive are the
       candidates; decide with parent (download is free, just heavy).
 - [ ] Verify llama.cpp serves the GGUF on Kaggle T4 (needs a GPU session; queue for the 21/11 GPU window
       if a slot is free — NTL v7 / Zindi v20 / Squares GA already compete for it; parent decides order).
-- [ ] RAN domain primer for the agent: 3GPP concepts the tasks assume (RSRP/RSRQ/SINR, handover,
+- [x] RAN domain primer for the agent: 3GPP concepts the tasks assume (RSRP/RSRQ/SINR, handover,
       PCI confusion, antenna tilt/azimuth, power, load balancing, energy-saving carrier shutdown).
-      Draft from public sources; verify against the 27/11 task docs.
+      Draft from public sources; verify against the 27/11 task docs. — DONE 20/11 (docs/ran-primer.md, marked DRAFT, with a 27/11 verification checklist).
 
 ### MUST wait for 27/11
 - Real task files, answer schema, submission format, tools API spec, per-task simulation budgets.
