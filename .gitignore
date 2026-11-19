@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+*.egg-info/
+
+# Giulia simulator (upstream, cloned by setup_giulia.sh — not vendored)
+giulia/
+shadowing/
+*.mat
+
+# Model weights (never commit)
+models/
+*.gguf
+*.safetensors
+*.bin
+
+# Runs / outputs
+outputs/
+runs/
+*.parquet
+*.npz
+*.gof
+*.log
+
+# Local config / secrets
+.env
+config.local.yaml

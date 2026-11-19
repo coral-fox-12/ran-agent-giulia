@@ -1,0 +1,42 @@
+# ran-agent-giulia — configuration. Override with config.local.yaml (gitignored).
+# Base model is FIXED by the challenge rules: Qwen3.6-35B-A3B. Do not change `model`.
+llm:
+  model: "Qwen/Qwen3.6-35B-A3B"
+  # OpenAI-compatible endpoint (llama.cpp server, vLLM, SGLang). Empty = MockLLM (dev only).
+  base_url: ""
+  api_key: ""          # leave empty for local servers; never commit a real key
+  temperature: 0.2
+  max_tokens: 4096
+  seed: 42
+  timeout_s: 300
+
+simulator:
+  # "mock" (deterministic synthetic KPIs, offline dev) or "giulia" (real subprocess run)
+  backend: "mock"
+  giulia_dir: "./giulia"
+  # Real Giulia needs GPU + shadowing .mat files; see docs/RESEARCH.md §7.
+  python: "./venv/bin/python"
+  timeout_s: 1800
+
+agent:
+  max_steps: 24            # ReAct iterations per task (hard cap)
+  max_simulations: 10      # per task unless the task file says otherwise
+  max_tokens_per_task: 60000
+
+tasks:
+  # Per-task overrides; budgets are placeholders until the 27/11 spec lands.
+  fault_diagnosis:   { max_simulations: 8 }
+  outage_impact:     { max_simulations: 8 }
+  coverage:          { max_simulations: 10 }
+  radio_config:      { max_simulations: 10 }
+  site_placement:    { max_simulations: 10 }
+  energy:            { max_simulations: 10 }
+
+eval:
+  seed: 42
+  out_dir: "runs/"
+
+submit:
+  # Submission format is TBD until the 27/11 data drop — see ran_agent/submit.py.
+  format: "TBD-2026-11-27"
+  out_file: "runs/submission.csv"
